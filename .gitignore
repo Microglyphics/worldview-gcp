@@ -1,0 +1,29 @@
+# Python
+__pycache__/
+*.py[cod]
+*$py.class
+*.so
+.Python
+build/
+dist/
+
+# Environment
+.env
+.venv/
+venv/
+ENV/
+
+# Development
+cloud_sql_proxy*
+.vscode/
+.idea/
+*.log
+.pytest_cache/
+
+# IDE
+*.code-workspace
+
+# Google Cloud
+*.pyc
+.coverage
+coverage.xml

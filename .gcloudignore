@@ -1,0 +1,31 @@
+# This file specifies files that are *not* uploaded to Google Cloud
+# using gcloud. It follows the same syntax as .gitignore.
+
+# Git
+.gcloudignore
+.git
+.gitignore
+
+# Python
+__pycache__/
+*.pyc
+*.pyo
+*.pyd
+*_test.py
+setup.cfg
+
+# Environment
+.env
+.venv/
+venv/
+*.md
+
+# IDE
+.vscode/
+.idea/
+*.code-workspace
+
+# Development
+cloud_sql_proxy*
+build/
+dist/
