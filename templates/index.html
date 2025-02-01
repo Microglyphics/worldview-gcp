@@ -2,13 +2,173 @@
 <html>
 <head>
     <title>Modernity Worldview Survey</title>
-    <script src="https://unpkg.com/react@17/umd/react.development.js"></script>
-    <script src="https://unpkg.com/react-dom@17/umd/react-dom.development.js"></script>
-    <script src="https://unpkg.com/babel-standalone@6.26.0/babel.min.js"></script>
+    <!-- React -->
+    <script crossorigin src="https://unpkg.com/react@18/umd/react.development.js"></script>
+    <script crossorigin src="https://unpkg.com/react-dom@18/umd/react-dom.development.js"></script>
+    
+    <!-- Babel -->
+    <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
+    
+    <!-- Tailwind -->
     <link href="https://cdn.jsdelivr.net/npm/tailwindcss@2.2.19/dist/tailwind.min.css" rel="stylesheet">
 </head>
 <body>
     <div id="root"></div>
-    <script type="text/babel" src="/static/components/SurveyForm.jsx"></script>
+    
+    <!-- React Component and Initialization -->
+    <script type="text/babel">
+        const { useState, useEffect } = React;
+
+        const SurveyForm = () => {
+            const [questions, setQuestions] = useState(null);
+            const [responses, setResponses] = useState({});
+            const [error, setError] = useState(null);
+            const [analysisData, setAnalysisData] = useState(null);
+
+            useEffect(() => {
+                console.log("Fetching questions...");
+                fetch('/api/questions')
+                    .then(res => {
+                        console.log("Got response:", res);
+                        return res.json();
+                    })
+                    .then(data => {
+                        console.log("Got data:", data);
+                        setQuestions(data.questions);
+                    })
+                    .catch(err => {
+                        console.error("Error fetching questions:", err);
+                        setError(err.message);
+                    });
+            }, []);
+
+            const handleSubmit = async (e) => {
+                e.preventDefault();
+                try {
+                    // First submit the responses
+                    const submitResult = await fetch('/api/submit', {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify({
+                            ...responses,
+                            browser: navigator.userAgent,
+                            source: 'web'
+                        })
+                    });
+                    const submitData = await submitResult.json();
+                    console.log("Submit response:", submitData);
+
+                    // Then get the analysis
+                    const analysisResult = await fetch('/api/analyze', {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify({
+                            Q1: responses.q1_response,
+                            Q2: responses.q2_response,
+                            Q3: responses.q3_response,
+                            Q4: responses.q4_response,
+                            Q5: responses.q5_response,
+                            Q6: responses.q6_response
+                        })
+                    });
+                    const analysis = await analysisResult.json();
+                    console.log("Analysis response:", analysis);
+                    setAnalysisData(analysis);
+
+                } catch (error) {
+                    console.error("Error submitting survey:", error);
+                    setError("Error submitting survey. Please try again.");
+                }
+            };
+
+            if (error) return <div className="text-red-600">Error: {error}</div>;
+            if (!questions) return <div className="text-blue-600">Loading questions...</div>;
+
+            if (analysisData) {
+                // Check if we have valid data before trying to display it
+                if (!analysisData.scores || !analysisData.category_responses) {
+                    return <div className="text-red-600">Error: Invalid analysis data received</div>;
+                }
+
+                return (
+                    <div className="max-w-4xl mx-auto p-4">
+                        <h1 className="text-2xl font-bold mb-4">{analysisData.perspective}</h1>
+                        
+                        <div className="mb-6">
+                            <h2 className="text-xl font-semibold mb-2">Your Perspective Scores:</h2>
+                            <div className="grid grid-cols-3 gap-4">
+                                <div>PreModern: {analysisData.scores[0]}%</div>
+                                <div>Modern: {analysisData.scores[1]}%</div>
+                                <div>PostModern: {analysisData.scores[2]}%</div>
+                            </div>
+                        </div>
+
+                        <div className="space-y-6">
+                            {Object.entries(analysisData.category_responses)
+                                .map(([category, response]) => (
+                                    <div key={category} className="border rounded p-4">
+                                        <h3 className="text-lg font-semibold mb-2">{category}</h3>
+                                        <p>{response}</p>
+                                    </div>
+                                ))}
+                        </div>
+
+                        <button 
+                            onClick={() => window.location.reload()}
+                            className="mt-6 bg-blue-600 text-white px-4 py-2 rounded hover:bg-blue-700"
+                        >
+                            Take Survey Again
+                        </button>
+                    </div>
+                );
+            }
+
+            return (
+                <div className="max-w-4xl mx-auto p-4">
+                    <form onSubmit={handleSubmit}>
+                        {Object.entries(questions).map(([id, question]) => (
+                            <div key={id} className="mb-6 p-6 border rounded shadow">
+                                <h3 className="text-lg font-semibold mb-4">{question.text}</h3>
+                                <div className="space-y-2">
+                                    {question.responses.map((response, idx) => (
+                                        <div key={response.id} className="flex items-center">
+                                            <input
+                                                type="radio"
+                                                name={id}
+                                                value={idx + 1}
+                                                id={response.id}
+                                                className="mr-2"
+                                                onChange={(e) => setResponses({
+                                                    ...responses,
+                                                    [`${id.toLowerCase()}_response`]: parseInt(e.target.value)
+                                                })}
+                                            />
+                                            <label htmlFor={response.id}>{response.text}</label>
+                                        </div>
+                                    ))}
+                                </div>
+                            </div>
+                        ))}
+                        <button 
+                            type="submit" 
+                            className="bg-blue-600 text-white px-4 py-2 rounded hover:bg-blue-700"
+                        >
+                            Submit
+                        </button>
+                    </form>
+                </div>
+            );
+        };
+
+        // Add error boundary around render
+        try {
+            const root = ReactDOM.createRoot(document.getElementById('root'));
+            root.render(<SurveyForm />);
+        } catch (err) {
+            console.error("Error rendering app:", err);
+            document.getElementById('root').innerHTML = 
+                `<div class="text-red-600">Error loading application: ${err.message}</div>`;
+        }
+    </script>
 </body>
 </html>
