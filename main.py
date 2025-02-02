@@ -6,6 +6,9 @@ import logging
 import uuid
 import json
 
+# Debugging MySQL connexion
+from contextlib import contextmanager
+
 # Third-party imports
 from fastapi import FastAPI, HTTPException, Request
 from fastapi.middleware.cors import CORSMiddleware
@@ -23,6 +26,11 @@ from src.visualization.perspective_analyzer import PerspectiveAnalyzer
 # Configure logging
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
+# Extended Logging
+logger.info("Starting FastAPI application")
+logger.info("Creating database manager instance")
+db_manager = DatabaseManager()
+logger.info("Database manager created")
 
 # Get base directory for data files
 BASE_DIR = Path(__file__).resolve().parent
@@ -34,6 +42,48 @@ app = FastAPI(
     version="1.0.0"
 )
 
+# Add a context manager for database operations
+@contextmanager
+def get_db():
+    logger.info("Entering database context")
+    try:
+        logger.info("Attempting to connect database")
+        db_manager.connect()
+        logger.info("Database connected successfully")
+        yield db_manager
+    except Exception as e:
+        logger.error(f"Database context error: {e}", exc_info=True)
+        raise
+    finally:
+        logger.info("Exiting database context")
+        try:
+            if hasattr(db_manager, 'connection') and db_manager.connection:
+                db_manager.connection.close()
+                logger.info("Database connection closed")
+        except Exception as e:
+            logger.error(f"Error closing database connection: {e}")
+
+@app.post("/api/submit")
+async def submit_survey(response: SurveyResponse):
+    logger.info("Starting submit_survey endpoint")
+    try:
+        logger.info(f"Received survey data: {response.dict()}")
+        data = response.dict()
+        
+        # Use db_manager directly since it's our singleton instance
+        record_id = db_manager.save_response(data)
+        logger.info(f"Saved survey response with ID: {record_id}")
+        
+        return {
+            "status": "success",
+            "message": "Survey response recorded",
+            "session_id": response.session_id,
+            "record_id": record_id
+        }
+    except Exception as e:
+        logger.error(f"Error saving survey: {e}", exc_info=True)
+        raise HTTPException(status_code=500, detail=str(e))
+    
 # Setup templates - add this right after app creation
 templates = Jinja2Templates(directory="templates")
 
@@ -173,8 +223,7 @@ async def analyze_survey(responses: dict):
 @app.get("/api/health")
 async def health_check():
     try:
-        # Test database connection
-        db.connect()
+        db_manager.connect()  # This will reconnect if needed
         return {
             "status": "healthy",
             "database": "connected"
@@ -319,20 +368,6 @@ async def check_files():
         "templates_path": str(t_path)
     }
 
-@app.post("/api/submit")
-async def submit_survey(response: SurveyResponse):
-    try:
-        record_id = db.save_response(response.dict())
-        return {
-            "status": "success",
-            "message": "Survey response recorded",
-            "session_id": response.session_id,
-            "record_id": record_id
-        }
-    except Exception as e:
-        logger.error(f"Error saving survey: {e}")
-        raise HTTPException(status_code=500, detail=str(e))
-
 @app.post("/api/test-survey")
 async def test_survey(survey: SurveyResponse):
     try:
@@ -374,3 +409,19 @@ async def test_endpoint():
 @app.get("/api/test-route")
 async def test_route():
     return {"status": "route exists"}
+
+@app.get("/api/test-db")
+async def test_db():
+    """Test database connection by inserting a dummy record."""
+    logger.info("Testing database connection")
+    try:
+        record_id = db_manager.test_connection()
+        logger.info(f"Test record inserted with ID: {record_id}")
+        return {
+            "status": "success",
+            "message": "Test record inserted",
+            "record_id": record_id
+        }
+    except Exception as e:
+        logger.error(f"Database test failed: {e}")
+        raise HTTPException(status_code=500, detail=str(e))
