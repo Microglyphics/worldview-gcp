@@ -1,3 +1,6 @@
+# Debugging MySQL connexion
+from contextlib import contextmanager
+
 # main.py
 # Standard library imports
 import os
@@ -6,13 +9,9 @@ import logging
 import uuid
 import json
 
-# Debugging MySQL connexion
-from contextlib import contextmanager
-
 # Third-party imports
 from fastapi import FastAPI, HTTPException, Request
 from fastapi.middleware.cors import CORSMiddleware
-from fastapi.middleware.httpsredirect import HTTPSRedirectMiddleware
 from fastapi.security import HTTPBasic
 from fastapi.staticfiles import StaticFiles
 from fastapi.templating import Jinja2Templates
@@ -26,8 +25,8 @@ from src.visualization.perspective_analyzer import PerspectiveAnalyzer
 # Configure logging
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
-# Extended Logging
-logger.info("Starting FastAPI application")
+
+# Create single database manager instance
 logger.info("Creating database manager instance")
 db_manager = DatabaseManager()
 logger.info("Database manager created")
@@ -112,7 +111,7 @@ app.add_middleware(
 )
 
 # Initialize database manager
-db = DatabaseManager()
+# db = DatabaseManager()
 
 @app.middleware("http")
 async def add_security_headers(request, call_next):
@@ -332,7 +331,11 @@ def calculate_perspective_scores(responses: dict, questions_data: dict) -> list:
     # Convert to percentages
     total = sum(total_scores)
     if total > 0:
-        return [round((score / total) * 100, 1) for score in total_scores]
+        normalized_scores = [round((score / total) * 100, 1) for score in total_scores]
+        # Ensure scores sum to exactly 100
+        adjustment = 100 - sum(normalized_scores)
+        normalized_scores[-1] += adjustment  # Add any rounding difference to last score
+        return normalized_scores
     return [0, 0, 0]
 
 def get_category_responses(analysis: dict, templates: dict) -> dict:
@@ -368,39 +371,40 @@ async def check_files():
         "templates_path": str(t_path)
     }
 
-@app.post("/api/test-survey")
-async def test_survey(survey: SurveyResponse):
-    try:
-        logger.info(f"Received survey data: {survey.dict()}")
-        
+
+# @app.post("/api/test-survey")
+# async def test_survey(survey: SurveyResponse):
+#    try:
+#        logger.info(f"Received survey data: {survey.dict()}")
+#        
         # Add session_id if not provided
-        if not hasattr(survey, 'session_id'):
-            survey.session_id = str(uuid.uuid4())
-            logger.info(f"Generated new session_id: {survey.session_id}")
+#        if not hasattr(survey, 'session_id'):
+#            survey.session_id = str(uuid.uuid4())
+#            logger.info(f"Generated new session_id: {survey.session_id}")
         
-        try:
-            record_id = db.save_response(survey.dict())
-            logger.info(f"Saved survey response with record_id: {record_id}")
+#        try:
+#            record_id = db.save_response(survey.dict())
+#            logger.info(f"Saved survey response with record_id: {record_id}")
             
-            return {
-                "status": "success",
-                "message": "Survey response recorded",
-                "session_id": survey.session_id,
-                "record_id": record_id
-            }
-        except Exception as db_error:
-            logger.error(f"Database error: {str(db_error)}")
-            raise HTTPException(
-                status_code=500,
-                detail=f"Database error: {str(db_error)}"
-            )
+#            return {
+#                "status": "success",
+#                "message": "Survey response recorded",
+#                "session_id": survey.session_id,
+#                "record_id": record_id
+#            }
+#        except Exception as db_error:
+#            logger.error(f"Database error: {str(db_error)}")
+#            raise HTTPException(
+#                status_code=500,
+#                detail=f"Database error: {str(db_error)}"
+#            )
             
-    except Exception as e:
-        logger.error(f"Error processing survey: {str(e)}")
-        raise HTTPException(
-            status_code=500,
-            detail=f"Error processing survey: {str(e)}"
-        )
+#    except Exception as e:
+#        logger.error(f"Error processing survey: {str(e)}")
+#        raise HTTPException(
+#            status_code=500,
+#            detail=f"Error processing survey: {str(e)}"
+#        )
     
 @app.post("/api/test")
 async def test_endpoint():
