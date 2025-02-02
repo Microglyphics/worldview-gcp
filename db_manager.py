@@ -39,7 +39,21 @@ class DatabaseManager:
             logging.error(f"Error connecting to database: {e}")
             raise
 
+    def ensure_connection(self):
+        """Ensure database connection is active, reconnect if needed."""
+        try:
+            if not self.connection or not self.connection.is_connected():
+                self.connect()
+        except Error as e:
+            logger.error(f"Error checking connection: {e}")
+            self.connect()
+
     def save_response(self, survey_data: dict) -> int:
+        """Save survey response to database."""
+        if not self.connection or not self.connection.is_connected():
+            self.connect()
+            
+        cursor = None
         try:
             cursor = self.connection.cursor()
             query = """
@@ -58,6 +72,9 @@ class DatabaseManager:
             return cursor.lastrowid
         except Error as e:
             logger.error(f"Error saving response: {e}")
+            if self.connection:
+                self.connection.rollback()
             raise
         finally:
-            cursor.close()
+            if cursor:
+                cursor.close()
