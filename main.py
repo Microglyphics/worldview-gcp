@@ -233,6 +233,19 @@ async def health_check():
             "database": str(e)
         }
     
+@app.get("/api/db-health")
+async def db_health():
+    """Test database connection from FastAPI."""
+    try:
+        connection = db_manager.get_connection()
+        cursor = connection.cursor()
+        cursor.execute("SELECT 1")
+        result = cursor.fetchone()
+        connection.close()
+        return {"status": "healthy", "db_result": result[0]}
+    except Exception as e:
+        return {"status": "unhealthy", "error": str(e)}
+    
 @app.get("/debug-paths")
 async def debug_paths():
     base = Path(__file__).resolve().parent
@@ -370,42 +383,7 @@ async def check_files():
         "templates_file_exists": t_path.exists(),
         "templates_path": str(t_path)
     }
-
-
-# @app.post("/api/test-survey")
-# async def test_survey(survey: SurveyResponse):
-#    try:
-#        logger.info(f"Received survey data: {survey.dict()}")
-#        
-        # Add session_id if not provided
-#        if not hasattr(survey, 'session_id'):
-#            survey.session_id = str(uuid.uuid4())
-#            logger.info(f"Generated new session_id: {survey.session_id}")
-        
-#        try:
-#            record_id = db.save_response(survey.dict())
-#            logger.info(f"Saved survey response with record_id: {record_id}")
-            
-#            return {
-#                "status": "success",
-#                "message": "Survey response recorded",
-#                "session_id": survey.session_id,
-#                "record_id": record_id
-#            }
-#        except Exception as db_error:
-#            logger.error(f"Database error: {str(db_error)}")
-#            raise HTTPException(
-#                status_code=500,
-#                detail=f"Database error: {str(db_error)}"
-#            )
-            
-#    except Exception as e:
-#        logger.error(f"Error processing survey: {str(e)}")
-#        raise HTTPException(
-#            status_code=500,
-#            detail=f"Error processing survey: {str(e)}"
-#        )
-    
+ 
 @app.post("/api/test")
 async def test_endpoint():
     return {"message": "test endpoint working"}
@@ -415,17 +393,14 @@ async def test_route():
     return {"status": "route exists"}
 
 @app.get("/api/test-db")
+@app.get("/api/test-db")
 async def test_db():
-    """Test database connection by inserting a dummy record."""
-    logger.info("Testing database connection")
+    """Test database connection."""
+    logger.info("Starting database connection test")
     try:
-        record_id = db_manager.test_connection()
-        logger.info(f"Test record inserted with ID: {record_id}")
-        return {
-            "status": "success",
-            "message": "Test record inserted",
-            "record_id": record_id
-        }
+        result = db_manager.test_connection()
+        logger.info(f"Test completed: {result}")
+        return result
     except Exception as e:
         logger.error(f"Database test failed: {e}")
         raise HTTPException(status_code=500, detail=str(e))
