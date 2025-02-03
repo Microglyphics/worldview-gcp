@@ -18,114 +18,276 @@
     <!-- React Components and Initialization -->
     <script type="text/babel">
         const { useState, useEffect } = React;
-
-        // TernaryPlot Component
+    
+        // Layer Controls Component
+        // Controls visibility of visualization elements
+        const LayerControls = ({ layers, setLayers }) => {
+            return (
+                <div className="absolute top-4 right-4 bg-white p-4 rounded shadow-lg">
+                    <h3 className="text-sm font-bold mb-2">Layer Controls</h3>
+                    {Object.entries(layers).map(([key, value]) => (
+                        <div key={key} className="flex items-center mb-2">
+                            <input
+                                type="checkbox"
+                                id={key}
+                                checked={value}
+                                onChange={(e) => setLayers({
+                                    ...layers,
+                                    [key]: e.target.checked
+                                })}
+                                className="mr-2"
+                            />
+                            <label htmlFor={key} className="text-sm capitalize">
+                                {key.replace(/([A-Z])/g, ' $1').trim()}
+                            </label>
+                        </div>
+                    ))}
+                </div>
+            );
+        };
+    
+        // Ternary Plot Component
+        // Displays perspective analysis in a ternary plot format
         const TernaryPlot = ({ analysisData }) => {
+            // Layer visibility state
             const [layers, setLayers] = useState({
-                baseline: true,
-                gridLines: true,
-                mixTriangle: true,
-                shading: true
+                baseline: true,    // Base triangle
+                gridLines: true,   // Grid reference lines
+                mixTriangle: true, // Central mixing region
+                shading: true      // Background shading
             });
-
+    
+            // SVG dimensions and margins
             const width = 800;
             const height = 700;
             const margin = { top: 50, right: 50, bottom: 50, left: 50 };
             const plotWidth = width - margin.left - margin.right;
             const plotHeight = height - margin.top - margin.bottom;
-
-            // Calculate triangle vertices
+    
+            // Triangle vertices calculation
             const vertices = {
-                top: { x: plotWidth / 2, y: margin.top }, // Modern
-                left: { x: margin.left, y: plotHeight - margin.bottom }, // PostModern
-                right: { x: plotWidth - margin.right, y: plotHeight - margin.bottom } // PreModern
+                top: { x: plotWidth / 2 + margin.left, y: margin.top },      // Modern
+                left: { x: margin.left, y: height - margin.bottom },         // PostModern
+                right: { x: width - margin.right, y: height - margin.bottom } // PreModern
             };
 
-            // Convert ternary coordinates to Cartesian
+            // Generate grid lines and ticks
+            const generateBaselineWithScales = () => {
+                const elements = [];
+                
+                // Base triangle path
+                elements.push(
+                    <path
+                        key="base-triangle"
+                        d={`M ${vertices.left.x},${vertices.left.y} 
+                        L ${vertices.top.x},${vertices.top.y} 
+                        L ${vertices.right.x},${vertices.right.y} 
+                        L ${vertices.left.x},${vertices.left.y}`}
+                        stroke="black"
+                        strokeWidth="2"
+                        fill="none"
+                    />
+                );
+
+                // Add axis labels
+                elements.push(
+                    <text
+                        key="premodern-label"
+                        x={(vertices.left.x + vertices.right.x) / 2}
+                        y={vertices.left.y + 40}
+                        textAnchor="middle"
+                    >
+                        PreModern
+                    </text>
+                );
+                elements.push(
+                    <text
+                        key="postmodern-label"
+                        x={vertices.left.x - 0}  // Moved closer to left edge
+                        y={(vertices.left.y + vertices.top.y) / 2 - 20}  // Adjusted y position
+                        textAnchor="end"
+                        transform={`rotate(-60 ${vertices.left.x - 40} ${(vertices.left.y + vertices.top.y) / 2 - 20})`}
+                    >
+                        PostModern
+                    </text>
+                );
+                elements.push(
+                    <text
+                        key="modern-label"
+                        x={vertices.right.x + 0}  // Moved closer to right edge
+                        y={(vertices.right.y + vertices.top.y) / 2 - 20}  // Adjusted y position
+                        textAnchor="start"
+                        transform={`rotate(60 ${vertices.right.x + 40} ${(vertices.right.y + vertices.top.y) / 2 - 20})`}
+                    >
+                        Modern
+                    </text>
+                );
+
+                // Generate tick marks and labels for all sides
+                for (let i = 0; i <= 10; i++) {
+                    const ratio = i / 10;
+                    
+                    // Bottom scale (Premodern) - 0 to 100 left to right
+                    const bottomValue = i * 10;
+                    elements.push(
+                        <g key={`bottom-tick-${i}`}>
+                            <line
+                                x1={vertices.left.x + (vertices.right.x - vertices.left.x) * ratio}
+                                y1={vertices.left.y}
+                                x2={vertices.left.x + (vertices.right.x - vertices.left.x) * ratio}
+                                y2={vertices.left.y + 5}
+                                stroke="black"
+                                strokeWidth="1"
+                            />
+                            <text
+                                x={vertices.left.x + (vertices.right.x - vertices.left.x) * ratio}
+                                y={vertices.left.y + 20}
+                                textAnchor="middle"
+                                fontSize="12"
+                            >
+                                {bottomValue}
+                            </text>
+                        </g>
+                    );
+
+                    // Left side (Postmodern) - 0 to 100 bottom to top
+                    const leftValue = i * 10;  // Now increases going up
+                    const leftX = vertices.left.x + (vertices.top.x - vertices.left.x) * ratio;
+                    const leftY = vertices.left.y - (vertices.left.y - vertices.top.y) * ratio;
+                    elements.push(
+                        <g key={`left-tick-${i}`}>
+                            <line
+                                x1={leftX}
+                                y1={leftY}
+                                x2={leftX - 5 * Math.cos(Math.PI / 3)}
+                                y2={leftY + 5 * Math.sin(Math.PI / 3)}
+                                stroke="black"
+                                strokeWidth="1"
+                            />
+                            <text
+                                x={leftX - 15}
+                                y={leftY + 5}
+                                textAnchor="end"
+                                transform={`rotate(-60 ${leftX} ${leftY})`}
+                                fontSize="12"
+                            >
+                                {leftValue}
+                            </text>
+                        </g>
+                    );
+
+                    // Right side (Modern) - 0 to 100 bottom to top
+                    const rightValue = i * 10;  // Now increases going up
+                    const rightX = vertices.right.x - (vertices.right.x - vertices.top.x) * ratio;
+                    const rightY = vertices.left.y - (vertices.left.y - vertices.top.y) * ratio;
+                    elements.push(
+                        <g key={`right-tick-${i}`}>
+                            <line
+                                x1={rightX}
+                                y1={rightY}
+                                x2={rightX + 5 * Math.cos(Math.PI / 3)}
+                                y2={rightY + 5 * Math.sin(Math.PI / 3)}
+                                stroke="black"
+                                strokeWidth="1"
+                            />
+                            <text
+                                x={rightX + 15}
+                                y={rightY + 5}
+                                textAnchor="start"
+                                transform={`rotate(60 ${rightX} ${rightY})`}
+                                fontSize="12"
+                            >
+                                {rightValue}
+                            </text>
+                        </g>
+                    );
+                }
+
+                return elements;
+            };
+
+            // Add this after generateBaselineWithScales()
+            const generateGridAndTicks = () => {
+                const gridElements = [];
+                
+                // Generate grid lines every 10 units
+                for (let i = 0; i <= 10; i++) {
+                    const ratio = i / 10;
+                    
+                    // These create the diagonal lattice pattern
+                    if (i > 0 && i < 10) {  // Skip 0 and 100% lines as they're part of the triangle
+                        // Lines parallel to left side
+                        gridElements.push(
+                            <line
+                                key={`left-${i}`}
+                                x1={vertices.left.x + (vertices.right.x - vertices.left.x) * ratio}
+                                y1={vertices.left.y}
+                                x2={vertices.top.x}
+                                y2={vertices.top.y + (vertices.left.y - vertices.top.y) * ratio}
+                                stroke="#ffcccc"
+                                strokeWidth="1"
+                                strokeDasharray="3,3"
+                                opacity="0.4"
+                            />
+                        );
+
+                        // Lines parallel to right side
+                        gridElements.push(
+                            <line
+                                key={`right-${i}`}
+                                x1={vertices.left.x + (vertices.right.x - vertices.left.x) * (1 - ratio)}
+                                y1={vertices.left.y}
+                                x2={vertices.top.x}
+                                y2={vertices.top.y + (vertices.left.y - vertices.top.y) * ratio}
+                                stroke="#ffcccc"
+                                strokeWidth="1"
+                                strokeDasharray="3,3"
+                                opacity="0.4"
+                            />
+                        );
+                    }
+                }
+                
+                return gridElements;
+            };
+    
+            // Convert ternary (triangular) coordinates to Cartesian (x,y) coordinates
             const ternaryToCartesian = (pre, mod, post) => {
                 const total = pre + mod + post;
                 const normalizedPre = pre / total;
                 const normalizedMod = mod / total;
                 const normalizedPost = post / total;
-
+    
                 const x = vertices.left.x * normalizedPost + 
                          vertices.top.x * normalizedMod + 
                          vertices.right.x * normalizedPre;
-
+    
                 const y = vertices.left.y * normalizedPost + 
                          vertices.top.y * normalizedMod + 
                          vertices.right.y * normalizedPre;
-
+    
                 return { x, y };
             };
-
-            // Calculate plot point position
+    
+            // Calculate data point position
             const plotPoint = ternaryToCartesian(...analysisData.scores);
-
-            // Generate tick marks
-            const generateTicks = () => {
-                const ticks = [];
-                for (let i = 0; i <= 100; i += 10) {
-                    const x = vertices.left.x + (vertices.right.x - vertices.left.x) * (i / 100);
-                    ticks.push(
-                        <g key={`bottom-${i}`}>
-                            <line 
-                                x1={x} 
-                                y1={vertices.left.y} 
-                                x2={x} 
-                                y2={vertices.left.y + 5} 
-                                stroke="black" 
-                                strokeWidth="1" 
-                            />
-                            <text 
-                                x={x} 
-                                y={vertices.left.y + 20} 
-                                textAnchor="middle" 
-                                className="text-xs"
-                            >
-                                {i}
-                            </text>
-                        </g>
-                    );
-                }
-                return ticks;
-            };
-
+    
             return (
                 <div className="relative">
+                    <LayerControls layers={layers} setLayers={setLayers} />
                     <svg 
                         width={width} 
                         height={height} 
                         className="bg-white mx-auto"
                         viewBox={`0 0 ${width} ${height}`}
                     >
-                        {/* Base triangle */}
-                        <g className={layers.baseline ? 'visible' : 'invisible'}>
-                            <path
-                                d={`M ${vertices.left.x},${vertices.left.y} 
-                                    L ${vertices.top.x},${vertices.top.y} 
-                                    L ${vertices.right.x},${vertices.right.y} 
-                                    L ${vertices.left.x},${vertices.left.y}`}
-                                stroke="black"
-                                strokeWidth="2"
-                                fill="none"
-                            />
-                            
-                            {generateTicks()}
-                            
-                            {/* Labels */}
-                            <text x={vertices.top.x} y={vertices.top.y - 20} textAnchor="middle" className="text-lg font-bold">
-                                Modern
-                            </text>
-                            <text x={vertices.left.x - 20} y={vertices.left.y} textAnchor="end" className="text-lg font-bold">
-                                PostModern
-                            </text>
-                            <text x={vertices.right.x + 20} y={vertices.right.y} textAnchor="start" className="text-lg font-bold">
-                                PreModern
-                            </text>
-                        </g>
+                        {/* Grid lines and ticks */}
+                        {layers.gridLines && generateGridAndTicks()}
+                        
+                        {/* Base triangle with scales */}
+                        {layers.baseline && generateBaselineWithScales()}
 
-                        {/* Plot point */}
+                        {/* Data point */}
                         <circle
                             cx={plotPoint.x}
                             cy={plotPoint.y}
@@ -138,7 +300,8 @@
                 </div>
             );
         };
-
+    
+// =================================================================================================
         // SurveyForm Component
         const SurveyForm = () => {
             const [questions, setQuestions] = useState(null);
