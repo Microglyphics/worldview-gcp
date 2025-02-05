@@ -235,12 +235,29 @@
     
 // ================================== SurveyForm Component =================================================
 const SurveyForm = () => {
-            const [questions, setQuestions] = useState(null);
-            const [responses, setResponses] = useState({});
-            const [submissionAttempted, setSubmissionAttempted] = useState(false);
-            const [error, setError] = useState(null);
-            const [analysisData, setAnalysisData] = useState(null);
-            const [isSubmitting, setIsSubmitting] = useState(false);
+    const [questions, setQuestions] = useState(null);
+    const [responses, setResponses] = useState({});
+    const [submissionAttempted, setSubmissionAttempted] = useState(false);
+    const [error, setError] = useState(null);
+    const [analysisData, setAnalysisData] = useState(null);
+    const [isSubmitting, setIsSubmitting] = useState(false);
+
+    // Add these helper functions
+    const getRegion = () => {
+        const primaryLocale = navigator.language || "en-US";
+        const region = primaryLocale.split('-')[1] || primaryLocale;
+        const allLanguages = navigator.languages ? navigator.languages.join(', ') : primaryLocale;
+        return {
+            primary: region,
+            all: allLanguages
+        };
+    };
+
+    const getSource = () => {
+        return window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1' 
+            ? 'local' 
+            : 'web';
+    };
 
             useEffect(() => {
                 fetch('/api/questions')
@@ -284,6 +301,7 @@ const SurveyForm = () => {
                 try {
                     let pre = 0, mod = 0, post = 0;
                     
+                    // Calculate scores
                     Object.entries(responses).forEach(([key, response_num]) => {
                         const questionKey = key.toUpperCase().replace('_RESPONSE', '');
                         const question = questions[questionKey];
@@ -309,7 +327,9 @@ const SurveyForm = () => {
                     };
 
                     const total = pre + mod + post;
+                    const regionInfo = getRegion();
 
+                    // Create submission data with all calculated values
                     const submissionData = {
                         session_id: crypto.randomUUID(),
                         ...responses,
@@ -323,8 +343,8 @@ const SurveyForm = () => {
                                 vertices.top.y * (mod/total) + 
                                 vertices.right.y * (pre/total)) * 100) / 100,
                         browser: navigator.userAgent,
-                        region: null,
-                        source: 'web'
+                        region: regionInfo.primary,
+                        source: getSource()
                     };
 
                     const submitResponse = await fetch('/api/submit', {
