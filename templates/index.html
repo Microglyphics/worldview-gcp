@@ -169,6 +169,39 @@
                 return elements;
             };
 
+// == This function controls the interior triangle in the TernaryPlot ================================
+            const generateMixTriangle = () => {
+                // Calculate 50% points on each side
+                const leftSide50 = {
+                    x: vertices.left.x + (vertices.top.x - vertices.left.x) * 0.5,
+                    y: vertices.left.y - (vertices.left.y - vertices.top.y) * 0.5
+                };
+                
+                const rightSide50 = {
+                    x: vertices.right.x - (vertices.right.x - vertices.top.x) * 0.5,
+                    y: vertices.right.y - (vertices.right.y - vertices.top.y) * 0.5
+                };
+                
+                const bottomSide50 = {
+                    x: vertices.left.x + (vertices.right.x - vertices.left.x) * 0.5,
+                    y: vertices.left.y
+                };
+
+                return (
+                    <path
+                        key="mix-triangle"
+                        d={`M ${bottomSide50.x},${bottomSide50.y} 
+                            L ${leftSide50.x},${leftSide50.y} 
+                            L ${rightSide50.x},${rightSide50.y} 
+                            Z`}
+                        stroke="#ff0000"
+                        strokeWidth="2"
+                        fill="none"
+                    />
+                );
+            };         
+
+// == This function generates the grid lines and ticks for the ternary plot ==
             const generateGridAndTicks = () => {
                 const gridElements = [];
                 
@@ -322,13 +355,14 @@
                     <svg width={width} height={height} className="bg-white mx-auto" viewBox={`0 0 ${width} ${height}`}>
                         {layers.gridLines && generateGridAndTicks()}
                         {layers.baseline && generateBaselineWithScales()}
+                        {layers.mixTriangle && generateMixTriangle()}
                         <circle cx={plotPoint.x} cy={plotPoint.y} r="6" fill="red" stroke="white" strokeWidth="2"/>
                     </svg>
                 </div>
             );
         };
     
-// ================================== SurveyForm Component =================================================
+// == SurveyForm Component ===================================================
 const SurveyForm = () => {
     const [questions, setQuestions] = useState(null);
     const [responses, setResponses] = useState({});
@@ -633,7 +667,7 @@ const SurveyForm = () => {
     </div>
 );
 };
-// =============== Close SurveyForm component =================================================================
+// == Close SurveyForm component =================================================================
 
 // Error boundary around render
 try {
