@@ -4,3 +4,4 @@ mysql-connector-python
 pydantic
 google-cloud-secret-manager
 python-dotenv
+jinja2>=3.0.0
