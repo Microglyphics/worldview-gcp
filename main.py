@@ -419,3 +419,31 @@ async def test_db():
     except Exception as e:
         logger.error(f"Database test failed: {e}")
         raise HTTPException(status_code=500, detail=str(e))
+    
+@app.get("/api/connexion-test")
+async def test_connection():
+    """Test database connection and return detailed diagnostics"""
+    try:
+        # Get environment info
+        env_info = {
+            "GAE_ENV": os.getenv('GAE_ENV'),
+            "INSTANCE_CONNECTION_NAME": os.getenv('INSTANCE_CONNECTION_NAME'),
+            "DB_HOST": os.getenv('DB_HOST'),
+            "DB_PORT": os.getenv('DB_PORT')
+        }
+        
+        # Test database connexion
+        result = db_manager.test_connection()
+        
+        return {
+            "status": "success",
+            "environment": env_info,
+            "connection_test": result
+        }
+    except Exception as e:
+        logger.error(f"Connexion test failed: {e}")
+        return {
+            "status": "error",
+            "message": str(e),
+            "environment": env_info
+        }
