@@ -172,35 +172,130 @@
             const generateGridAndTicks = () => {
                 const gridElements = [];
                 
+                // Helper function to get intersection point with triangle edge
+                const getIntersection = (x1, y1, x2, y2, x3, y3, x4, y4) => {
+                    const denominator = (x1 - x2) * (y3 - y4) - (y1 - y2) * (x3 - x4);
+                    
+                    // Lines are parallel
+                    if (denominator === 0) return null;
+                    
+                    const t = ((x1 - x3) * (y3 - y4) - (y1 - y3) * (x3 - x4)) / denominator;
+                    
+                    // Check if intersection point lies within line segments
+                    if (t < 0 || t > 1) return null;
+                    
+                    return {
+                        x: x1 + t * (x2 - x1),
+                        y: y1 + t * (y2 - y1)
+                    };
+                };
+
+                // Function to check if point is inside triangle
+                const isInsideTriangle = (px, py) => {
+                    const {left, right, top} = vertices;
+                    
+                    // Calculate barycentric coordinates
+                    const denominator = (left.y - top.y) * (right.x - top.x) + (top.x - left.x) * (right.y - top.y);
+                    const a = ((left.y - top.y) * (px - top.x) + (top.x - left.x) * (py - top.y)) / denominator;
+                    const b = ((top.y - right.y) * (px - top.x) + (right.x - top.x) * (py - top.y)) / denominator;
+                    const c = 1 - a - b;
+                    
+                    return a >= 0 && a <= 1 && b >= 0 && b <= 1 && c >= 0 && c <= 1;
+                };
+
+                // Generate grid lines
                 for (let i = 1; i < 10; i++) {
                     const ratio = i / 10;
                     
-                    // Left parallel lines
-                    gridElements.push(
-                        <line key={`left-${i}`}
-                            x1={vertices.left.x + (vertices.right.x - vertices.left.x) * ratio}
-                            y1={vertices.left.y}
-                            x2={vertices.top.x}
-                            y2={vertices.top.y + (vertices.left.y - vertices.top.y) * ratio}
-                            stroke="#ffcccc" strokeWidth="1" strokeDasharray="3,3" opacity="0.4"
-                        />
-                    );
+                    // Right parallel lines (bottom to top-left)
+                    let startX = vertices.left.x + (vertices.right.x - vertices.left.x) * ratio;
+                    let startY = vertices.left.y;
+                    let endX = startX + (vertices.top.x - vertices.left.x);
+                    let endY = vertices.top.y;
+                    
+                    // Find intersections with triangle edges
+                    const rightIntersections = [
+                        getIntersection(startX, startY, endX, endY, 
+                                    vertices.left.x, vertices.left.y, 
+                                    vertices.right.x, vertices.right.y),
+                        getIntersection(startX, startY, endX, endY, 
+                                    vertices.top.x, vertices.top.y, 
+                                    vertices.right.x, vertices.right.y),
+                        getIntersection(startX, startY, endX, endY, 
+                                    vertices.left.x, vertices.left.y, 
+                                    vertices.top.x, vertices.top.y)
+                    ].filter(p => p !== null);
 
-                    // Right parallel lines
-                    gridElements.push(
-                        <line key={`right-${i}`}
-                            x1={vertices.left.x + (vertices.right.x - vertices.left.x) * (1 - ratio)}
-                            y1={vertices.left.y}
-                            x2={vertices.top.x}
-                            y2={vertices.top.y + (vertices.left.y - vertices.top.y) * ratio}
-                            stroke="#ffcccc" strokeWidth="1" strokeDasharray="3,3" opacity="0.4"
-                        />
-                    );
+                    if (rightIntersections.length >= 2) {
+                        gridElements.push(
+                            <line key={`right-${i}`}
+                                x1={rightIntersections[0].x}
+                                y1={rightIntersections[0].y}
+                                x2={rightIntersections[1].x}
+                                y2={rightIntersections[1].y}
+                                stroke="#ff0000"
+                                strokeWidth="1"
+                                opacity="0.4"
+                            />
+                        );
+                    }
+
+                    // Left parallel lines (bottom to top-right)
+                    startX = vertices.left.x + (vertices.right.x - vertices.left.x) * (1 - ratio);
+                    startY = vertices.left.y;
+                    endX = startX - (vertices.right.x - vertices.top.x);
+                    endY = vertices.top.y;
+                    
+                    const leftIntersections = [
+                        getIntersection(startX, startY, endX, endY,
+                                    vertices.left.x, vertices.left.y,
+                                    vertices.right.x, vertices.right.y),
+                        getIntersection(startX, startY, endX, endY,
+                                    vertices.top.x, vertices.top.y,
+                                    vertices.left.x, vertices.left.y),
+                        getIntersection(startX, startY, endX, endY,
+                                    vertices.top.x, vertices.top.y,
+                                    vertices.right.x, vertices.right.y)
+                    ].filter(p => p !== null);
+
+                    if (leftIntersections.length >= 2) {
+                        gridElements.push(
+                            <line key={`left-${i}`}
+                                x1={leftIntersections[0].x}
+                                y1={leftIntersections[0].y}
+                                x2={leftIntersections[1].x}
+                                y2={leftIntersections[1].y}
+                                stroke="#ff0000"
+                                strokeWidth="1"
+                                opacity="0.4"
+                            />
+                        );
+                    }
+
+                    // Bottom parallel lines
+                    startX = vertices.left.x + (vertices.top.x - vertices.left.x) * ratio;
+                    startY = vertices.left.y - (vertices.left.y - vertices.top.y) * ratio;
+                    endX = vertices.right.x - (vertices.right.x - vertices.top.x) * ratio;
+                    endY = startY;
+
+                    // Only add if line is inside triangle
+                    if (isInsideTriangle(startX, startY) && isInsideTriangle(endX, endY)) {
+                        gridElements.push(
+                            <line key={`bottom-${i}`}
+                                x1={startX}
+                                y1={startY}
+                                x2={endX}
+                                y2={endY}
+                                stroke="#ff0000"
+                                strokeWidth="1"
+                                opacity="0.4"
+                            />
+                        );
+                    }
                 }
                 
                 return gridElements;
-            };
-
+            }
             // Convert coordinates
             const ternaryToCartesian = (pre, mod, post) => {
                 const total = pre + mod + post;
