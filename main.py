@@ -17,6 +17,7 @@ from fastapi.security import HTTPBasic
 from fastapi.staticfiles import StaticFiles
 from fastapi.templating import Jinja2Templates
 from fastapi.responses import FileResponse
+from src.api.routes import pdf_routes
 
 # Local application imports
 from models import SurveyResponse, Question
@@ -125,8 +126,7 @@ app.add_middleware(
     allow_headers=["*"]
 )
 
-# Initialize database manager
-# db = DatabaseManager()
+app.include_router(pdf_routes.router, prefix="/api")
 
 @app.middleware("http")
 async def add_security_headers(request, call_next):

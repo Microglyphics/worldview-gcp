@@ -633,22 +633,86 @@ const SurveyForm = () => {
                 </div>
 
                 {/* Category Responses */}
-                <div className="space-y-6">
+                <div className="space-y-4">
                     {Object.entries(analysisData.category_responses)
                         .map(([category, response]) => (
-                            <div key={category} className="border rounded p-4">
-                                <h3 className="text-lg font-semibold mb-2">{category}</h3>
+                            <div key={category} className="border rounded p-3">
+                                <h3 className="text-lg font-semibold mb-1">{category}</h3>
                                 <p>{response}</p>
                             </div>
                         ))}
                 </div>
 
-                <button 
-                    onClick={() => window.location.reload()}
-                    className="mt-6 bg-blue-600 text-white px-4 py-2 rounded hover:bg-blue-700"
-                >
-                    Take Survey Again
-                </button>
+                <div className="flex space-x-4">
+                    <button 
+                        onClick={() => window.location.reload()}
+                        className="mt-6 bg-blue-600 text-white px-4 py-2 rounded hover:bg-blue-700"
+                    >
+                        Take Survey Again
+                    </button>
+                    <button 
+                        onClick={async () => {
+                            try {
+                                // Capture the SVG plot
+                                const svgElement = document.querySelector('svg');
+                                const svgData = new XMLSerializer().serializeToString(svgElement);
+                                const canvas = document.createElement('canvas');
+                                const ctx = canvas.getContext('2d');
+                                const img = new Image();
+                                
+                                // Convert SVG to PNG
+                                canvas.width = svgElement.width.baseVal.value;
+                                canvas.height = svgElement.height.baseVal.value;
+                                img.src = 'data:image/svg+xml;base64,' + btoa(unescape(encodeURIComponent(svgData)));
+                                
+                                await new Promise((resolve) => {
+                                    img.onload = () => {
+                                        ctx.fillStyle = 'white';
+                                        ctx.fillRect(0, 0, canvas.width, canvas.height);
+                                        ctx.drawImage(img, 0, 0);
+                                        resolve();
+                                    };
+                                });
+
+                                const plotImage = canvas.toDataURL('image/png');
+                                
+                                const response = await fetch('/api/generate-pdf', {
+                                    method: 'POST',
+                                    headers: {
+                                        'Content-Type': 'application/json',
+                                    },
+                                    body: JSON.stringify({
+                                        scores: analysisData.scores,
+                                        perspective: analysisData.perspective,
+                                        category_responses: analysisData.category_responses,
+                                        plot_image: plotImage
+                                    }),
+                                });
+                                
+                                if (!response.ok) throw new Error('PDF generation failed');
+                                
+                                const blob = await response.blob();
+                                const url = window.URL.createObjectURL(blob);
+                                const a = document.createElement('a');
+                                a.href = url;
+                                a.download = 'worldview_analysis.pdf';
+                                document.body.appendChild(a);
+                                a.click();
+                                window.URL.revokeObjectURL(url);
+                                document.body.removeChild(a);
+                            } catch (error) {
+                                console.error('Error generating PDF:', error);
+                                alert('Failed to generate PDF. Please try again.');
+                            }
+                        }}
+                        className="mt-6 bg-green-600 text-white px-4 py-2 rounded hover:bg-green-700 flex items-center"
+                    >
+                        <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5 mr-2" viewBox="0 0 20 20" fill="currentColor">
+                            <path fillRule="evenodd" d="M6 2a2 2 0 00-2 2v12a2 2 0 002 2h8a2 2 0 002-2V7.414A2 2 0 0015.414 6L12 2.586A2 2 0 0010.586 2H6zm5 6a1 1 0 10-2 0v3.586l-1.293-1.293a1 1 0 10-1.414 1.414l3 3a1 1 0 001.414 0l3-3a1 1 0 00-1.414-1.414L11 11.586V8z" clipRule="evenodd" />
+                        </svg>
+                        Download PDF Report
+                    </button>
+                </div>
             </>
         ) : (
             // Form view
