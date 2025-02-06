@@ -90,14 +90,20 @@
                     </text>
                 );
                 elements.push(
-                    <text key="postmodern-label" x={vertices.left.x - 0} y={(vertices.left.y + vertices.top.y) / 2 - 20} 
-                        textAnchor="end" transform={`rotate(-60 ${vertices.left.x - 40} ${(vertices.left.y + vertices.top.y) / 2 - 20})`}>
+                    <text key="postmodern-label" 
+                        x={vertices.left.x + 200} 
+                        y={((vertices.left.y + vertices.top.y) / 2) + 80} 
+                        textAnchor="start"
+                        transform={`rotate(-60 ${vertices.left.x + 60} ${(vertices.left.y + vertices.top.y) / 2})`}>
                         PostModern
                     </text>
                 );
                 elements.push(
-                    <text key="modern-label" x={vertices.right.x + 0} y={(vertices.right.y + vertices.top.y) / 2 - 20}
-                        textAnchor="start" transform={`rotate(60 ${vertices.right.x + 40} ${(vertices.right.y + vertices.top.y) / 2 - 20})`}>
+                    <text key="modern-label" 
+                        x={vertices.right.x - 200} 
+                        y={((vertices.left.y + vertices.top.y) / 2) + 80}
+                        textAnchor="end"
+                        transform={`rotate(60 ${vertices.right.x - 60} ${(vertices.right.y + vertices.top.y) / 2})`}>
                         Modern
                     </text>
                 );
