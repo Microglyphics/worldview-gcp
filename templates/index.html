@@ -201,6 +201,78 @@
                 );
             };         
 
+// == This function generates the shading for the TernaryPlot ========================================
+            const generateShading = () => {
+                const shadingElements = [];
+                
+                // Helper function to calculate points at percentage along edges
+                const getPointOnEdge = (start, end, percentage) => ({
+                    x: start.x + (end.x - start.x) * percentage,
+                    y: start.y + (end.y - start.y) * percentage
+                });
+
+                // Generate shading for each vertex (Modern, PreModern, PostModern)
+                const vertexConfigs = [
+                    {
+                        name: 'modern',
+                        vertex: vertices.top,
+                        edge1: vertices.left,
+                        edge2: vertices.right,
+                        color: '#90EE90'  // Light green
+                    },
+                    {
+                        name: 'premodern',
+                        vertex: vertices.right,
+                        edge1: vertices.top,
+                        edge2: vertices.left,
+                        color: '#90EE90'
+                    },
+                    {
+                        name: 'postmodern',
+                        vertex: vertices.left,
+                        edge1: vertices.top,
+                        edge2: vertices.right,
+                        color: '#90EE90'
+                    }
+                ];
+
+                vertexConfigs.forEach(config => {
+                    // Strong region (>70%)
+                    const point70Edge1 = getPointOnEdge(config.vertex, config.edge1, 0.3); // 70-30 split
+                    const point70Edge2 = getPointOnEdge(config.vertex, config.edge2, 0.3);
+
+                    shadingElements.push(
+                        <path
+                            key={`${config.name}-strong`}
+                            d={`M ${config.vertex.x},${config.vertex.y} 
+                                L ${point70Edge1.x},${point70Edge1.y} 
+                                L ${point70Edge2.x},${point70Edge2.y} Z`}
+                            fill={config.color}
+                            opacity="0.2"
+                        />
+                    );
+
+                    // Moderate region (50-70%)
+                    const point50Edge1 = getPointOnEdge(config.vertex, config.edge1, 0.5); // 50-50 split
+                    const point50Edge2 = getPointOnEdge(config.vertex, config.edge2, 0.5);
+
+                    shadingElements.push(
+                        <path
+                            key={`${config.name}-moderate`}
+                            d={`M ${point70Edge1.x},${point70Edge1.y} 
+                                L ${point50Edge1.x},${point50Edge1.y} 
+                                L ${point50Edge2.x},${point50Edge2.y}
+                                L ${point70Edge2.x},${point70Edge2.y} Z`}
+                            fill="#E8EB10"  // Light yellow
+                            opacity="0.2"
+                        />
+                    );
+                });
+
+                return shadingElements;
+            };            
+
+
 // == This function generates the grid lines and ticks for the ternary plot ==
             const generateGridAndTicks = () => {
                 const gridElements = [];
@@ -349,10 +421,12 @@
 
             const plotPoint = ternaryToCartesian(...analysisData.scores);
 
+// == Layer controls and SVG rendering ============================================================
             return (
                 <div className="relative">
                     <LayerControls layers={layers} setLayers={setLayers} />
                     <svg width={width} height={height} className="bg-white mx-auto" viewBox={`0 0 ${width} ${height}`}>
+                        {layers.shading && generateShading()}
                         {layers.gridLines && generateGridAndTicks()}
                         {layers.baseline && generateBaselineWithScales()}
                         {layers.mixTriangle && generateMixTriangle()}
