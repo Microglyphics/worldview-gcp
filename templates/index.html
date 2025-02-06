@@ -20,12 +20,12 @@
         const { useState, useEffect } = React;
     
         // Survey container wrapper to prevent click propagation
-        const surveyContainer = document.querySelector('.survey-container');
-            surveyContainer.addEventListener('click', (event) => {
-                if (event.target === surveyContainer) {
-                    event.preventDefault();
-                }
-            });
+#        const surveyContainer = document.querySelector('.survey-container');
+#            surveyContainer.addEventListener('click', (event) => {
+#                if (event.target === surveyContainer) {
+#                    event.preventDefault();
+#                }
+#            });
 
         // Layer Controls Component
         const LayerControls = ({ layers, setLayers }) => {
