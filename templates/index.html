@@ -620,9 +620,9 @@ const SurveyForm = () => {
                 <div className="mb-6">
                     <h2 className="text-xl font-semibold mb-2">Your Perspective Scores:</h2>
                     <div className="grid grid-cols-3 gap-4">
-                        <div>PreModern: {analysisData.scores[0]}%</div>
-                        <div>Modern: {analysisData.scores[1]}%</div>
-                        <div>PostModern: {analysisData.scores[2]}%</div>
+                        <div>PreModern: {analysisData.scores[0].toFixed(1)}%</div>
+                        <div>Modern: {analysisData.scores[1].toFixed(1)}%</div>
+                        <div>PostModern: {analysisData.scores[2].toFixed(1)}%</div>
                     </div>
                 </div>
 
