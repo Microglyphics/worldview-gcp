@@ -1,11 +1,14 @@
+// static/components/TernaryPlot.jsx
+
 import React, { useState, useEffect } from 'react';
+import CoordinateDebugger, { labelConfig } from './CoordinateDebugger'; // Debugging tool for ternary coordinates
 
 // TernaryPlot Component
 const TernaryPlot = ({ analysisData, onPlotCalculated }) => {
     const [layers, setLayers] = useState({
-        baseline: true,
+        // baseline: true,  # Hide baseline by default
         gridLines: true,
-        mixTriangle: true,
+        categoryBoundaries: true,
         shading: true
     });
 
@@ -61,35 +64,29 @@ const TernaryPlot = ({ analysisData, onPlotCalculated }) => {
  
     return (
         <div className="relative">
+            <DebugControls position={debugPosition} onAdjust={adjustPosition} />
             <LayerControls layers={layers} setLayers={setLayers} />
-            <svg 
-                width={width} 
-                height={height} 
-                className="bg-white mx-auto"
-                viewBox={`0 0 ${width} ${height}`}
-            >
-                {/* Base triangle */}
-                {layers.baseline && (
-                    <path
-                        d={`M ${vertices.left.x} ${vertices.left.y} 
-                           L ${vertices.top.x} ${vertices.top.y} 
-                           L ${vertices.right.x} ${vertices.right.y} 
-                           Z`}
-                        stroke="black"
-                        strokeWidth="2"
-                        fill="none"
+            <svg width={width} height={height} className="bg-white mx-auto" viewBox={`0 0 ${width} ${height}`}>
+                <text 
+                    key="postmodern-label"
+                    x={margin.left + labelConfig.postmodern.x} 
+                    y={height - margin.bottom + labelConfig.postmodern.y}
+                    textAnchor="end"
+                    transform={labelConfig.postmodern.r ? 
+                        `rotate(${labelConfig.postmodern.r} ${margin.left + labelConfig.postmodern.x} ${height - margin.bottom + labelConfig.postmodern.y})` : 
+                        null}
+                >
+                    Postmodern
+                </text>
+
+                {/* Debug overlay */}
+                {process.env.NODE_ENV === 'development' && (
+                    <CoordinateDebugger 
+                        width={width} 
+                        height={height} 
+                        margin={margin}
                     />
                 )}
-                
-                {/* Plot point */}
-                <circle
-                    cx={plotPoint.x}
-                    cy={plotPoint.y}
-                    r="6"
-                    fill="red"
-                    stroke="white"
-                    strokeWidth="2"
-                />
             </svg>
         </div>
     );

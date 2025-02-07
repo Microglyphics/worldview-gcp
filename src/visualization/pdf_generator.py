@@ -73,7 +73,7 @@ class ModernityPDFReport:
         self.pdf.set_font("Arial", size=10)
         self.pdf.write(5, "For more information, visit ")
         self.pdf.set_text_color(0, 0, 255)
-        self.pdf.write(5, "http://philosophics.blog")
+        self.pdf.write(5, "http://philosophics.blog/")
         self.pdf.set_text_color(0, 0, 0)
         self.pdf.write(5, f". All Rights Reserved © {datetime.now().year} Bry Willis, Philosophics")
 

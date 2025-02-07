@@ -24,6 +24,10 @@ from models import SurveyResponse, Question
 from db_manager import DatabaseManager
 from src.visualization.perspective_analyzer import PerspectiveAnalyzer
 
+# Dev environment setup
+from dotenv import load_dotenv
+load_dotenv()  # This loads .env in development
+
 # Configure logging
 logging.basicConfig(level=logging.DEBUG)
 logger = logging.getLogger(__name__)
@@ -109,8 +113,9 @@ class JSXStaticFiles(StaticFiles):
             response.headers['content-type'] = 'text/javascript'
         return response
 
-# Mount static files
+# Mount static files with JSX support
 app.mount("/static", JSXStaticFiles(directory="static"), name="static")
+app.mount("/src/components", JSXStaticFiles(directory="src/components"), name="components")
 
 # Add CORS middleware
 app.add_middleware(
