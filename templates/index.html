@@ -46,12 +46,13 @@
         };
 
         // Ternary Plot Component
-        const TernaryPlot = ({ analysisData }) => {
+        const TernaryPlot = ({ analysisData, questions, responses }) => {
             const [layers, setLayers] = useState({
                 // baseline: true,  # Hide baseline control 
                 gridLines: true,
                 categoryBoundaries: true,
-                shading: true
+                shading: true,
+                responsePoints: true
             });
 
             const width = 800;
@@ -60,25 +61,62 @@
             const plotWidth = width - margin.left - margin.right;
             const plotHeight = height - margin.top - margin.bottom;
 
+            // Define triangle vertices
             const vertices = {
                 top: { x: plotWidth / 2 + margin.left, y: margin.top },
                 left: { x: margin.left, y: height - margin.bottom },
                 right: { x: width - margin.right, y: height - margin.bottom }
             };
 
-                // Constants for label positioning
-                const LABEL_POSITIONS = {
-                    postmodern: {
-                        x: 35,
-                        y: -90,
-                        r: -60
-                    },
-                    modern: {
-                        x: -305,
-                        y: -550,
-                        r: 60
-                    }
-                };
+            // Define `generateResponsePoints`
+            function generateResponsePoints() {
+                if (!questions || !responses) return null;
+
+                // For each question -> find selected response -> plot circle
+                return Object.entries(questions).map(([qKey, qData]) => {
+                    const responseKey = qKey.toLowerCase() + "_response";
+                    const selectedId = responses[responseKey];
+                    if (!selectedId) return null;
+
+                    const responseObj = qData.responses.find(r => r.id === selectedId);
+                    if (!responseObj) return null;
+
+                    const { x, y } = ternaryToCartesian(...responseObj.scores);
+                    return (
+                        <circle
+                            key={`resp-${qKey}`}
+                            cx={x}
+                            cy={y}
+                            r="4"
+                            fill="#0000FF"
+                            stroke="white"
+                            strokeWidth="2"
+                            opacity="1.0"
+                        />
+                    );
+                });
+            }
+
+            // Debugging Q&A ===========================================
+            useEffect(() => {
+                console.log('TernaryPlot - questions:', questions);
+                console.log('TernaryPlot - responses:', responses);
+                }, [questions, responses]);
+
+
+            // Constants for label positioning
+            const LABEL_POSITIONS = {
+                postmodern: {
+                    x: 35,
+                    y: -90,
+                    r: -60
+                },
+                modern: {
+                    x: -305,
+                    y: -550,
+                    r: 60
+                }
+            };
                      
             const generateBaselineWithScales = () => {
                 const elements = [];
@@ -219,6 +257,38 @@
                     />
                 );
             };         
+// == Individual survey responses for plotting =======================================================
+            // Example of a simplified generateResponsePoints function:
+            function generateResponsePoints() {
+                if (!questions || !responses) return null;
+
+                // Convert each question's chosen response into a <circle> element
+                return Object.entries(questions).map(([qKey, qData]) => {
+                    // e.g., "Q1" -> "q1_response"
+                    const responseKey = qKey.toLowerCase() + '_response';
+                    const selectedId = responses[responseKey];
+                    if (!selectedId) return null;
+
+                    // Find the actual scores
+                    const responseObj = qData.responses.find(r => r.id === selectedId);
+                    if (!responseObj) return null;
+
+                    // Convert scores to Cartesian coords
+                    const { x, y } = ternaryToCartesian(...responseObj.scores);
+                    return (
+                        <circle
+                            key={`response-${qKey}`}
+                            cx={x}
+                            cy={y}
+                            r="6"
+                            fill="#0000FF"
+                            stroke="white"
+                            strokeWidth="2"
+                            opacity="1.0"
+                        />
+                    );
+                });
+            }
 
 // == This function generates the shading for the TernaryPlot ========================================
             const generateShading = () => {
@@ -428,33 +498,46 @@
                 const normalizedPost = post / total;
 
                 const x = vertices.left.x * normalizedPost + 
-                         vertices.top.x * normalizedMod + 
-                         vertices.right.x * normalizedPre;
+                        vertices.top.x  * normalizedMod  + 
+                        vertices.right.x * normalizedPre;
 
                 const y = vertices.left.y * normalizedPost + 
-                         vertices.top.y * normalizedMod + 
-                         vertices.right.y * normalizedPre;
+                        vertices.top.y  * normalizedMod  + 
+                        vertices.right.y * normalizedPre;
 
                 return { x, y };
             };
-
+            
             const plotPoint = ternaryToCartesian(...analysisData.scores);
 
 // == Layer controls and SVG rendering ============================================================
             return (
                 <div className="relative">
                     <LayerControls layers={layers} setLayers={setLayers} />
-                    <svg width={width} height={height} className="bg-white mx-auto" viewBox={`0 0 ${width} ${height}`}>
+                    <svg width={width} height={height} viewBox={`0 0 ${width} ${height}`}>
+                        {/* Conditionals controlled by your layer checkboxes */}
                         {layers.shading && generateShading()}
                         {layers.gridLines && generateGridAndTicks()}
                         {generateBaselineWithScales()}
                         {layers.categoryBoundaries && generateMixTriangle()}
-                        <circle cx={plotPoint.x} cy={plotPoint.y} r="6" fill="red" stroke="white" strokeWidth="2"/>
+
+                        {/* Use `generateResponsePoints()` when `responsePoints` is toggled */}
+                        {layers.responsePoints && generateResponsePoints()}
+
+                        {/* Single final red point */}
+                        <circle
+                            cx={plotPoint.x}
+                            cy={plotPoint.y}
+                            r="8"
+                            fill="red"
+                            stroke="white"
+                            strokeWidth="2"
+                        />
                     </svg>
                 </div>
             );
         };
-    
+
 // == SurveyForm Component ===================================================
 const SurveyForm = () => {
     const [questions, setQuestions] = useState(null);
@@ -658,7 +741,11 @@ const SurveyForm = () => {
                 
                 {/* Ternary Plot */}
                 <div className="mb-8">
-                    <TernaryPlot analysisData={analysisData} />
+                    <TernaryPlot
+                        analysisData={analysisData}
+                        questions={questions}
+                        responses={responses}
+                    />
                 </div>
 
                 {/* Scores */}
