@@ -780,7 +780,7 @@ const SurveyForm = () => {
 
                         return (
                             <div key={id} id={id} className={questionClass}>
-                                <h3 className="text-lg font-semibold mb-4 flex items-center justify-between">
+                                <h3 className="text-lg font-semibold mb-2 flex items-center justify-between">
                                     <span>{question.text}</span>
                                     {isUnanswered && (
                                         <span className="text-red-500 text-sm font-normal">
@@ -788,31 +788,31 @@ const SurveyForm = () => {
                                         </span>
                                     )}
                                 </h3>
-                                <div className="space-y-3">
+                                <div className="space-y-0"> {/* Changed from space-y-3 to space-y-0 */}
                                     {question.responses.map((response, index) => (
                                         <div 
                                             key={response.id} 
-                                            className={`flex items-start space-x-3 p-3 rounded-lg transition-colors ${
-                                                responses[id.toLowerCase() + '_response'] === index + 1 
+                                            className={`flex items-start p-2 rounded-lg transition-colors ${
+                                                responses[id.toLowerCase() + '_response'] === response.id 
                                                     ? 'bg-blue-50' 
                                                     : 'hover:bg-gray-50'
                                             }`}
                                         >
-                                        <input
-                                            type="radio"
-                                            id={response.id}
-                                            name={id.toLowerCase() + '_response'}
-                                            value={response.id}  // Store QxRx ID instead of index
-                                            onChange={(e) => {
-                                                setResponses({
-                                                    ...responses,
-                                                    [id.toLowerCase() + '_response']: e.target.value // Store selected QxRx
-                                                });
-                                                setError(null);
-                                            }}
-                                            checked={responses[id.toLowerCase() + '_response'] === response.id}
-                                        />
-
+                                            <input
+                                                type="radio"
+                                                id={response.id}
+                                                name={id.toLowerCase() + '_response'}
+                                                value={response.id}
+                                                onChange={(e) => {
+                                                    setResponses({
+                                                        ...responses,
+                                                        [id.toLowerCase() + '_response']: e.target.value
+                                                    });
+                                                    setError(null);
+                                                }}
+                                                checked={responses[id.toLowerCase() + '_response'] === response.id}
+                                                className="mt-1 mr-3"
+                                            />
                                             <label 
                                                 htmlFor={response.id} 
                                                 className="text-gray-700 cursor-pointer flex-grow"
