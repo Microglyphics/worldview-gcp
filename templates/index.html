@@ -133,7 +133,6 @@
                 // Ticks and scales
                 for (let i = 0; i <= 10; i++) {
                     const ratio = i / 10;
-                    const value = i * 10;
                     
                     // Bottom scale
                     elements.push(
@@ -146,50 +145,42 @@
                                 stroke="black"
                                 strokeWidth="1"
                             />
-                            <text x={vertices.left.x + (vertices.right.x - vertices.left.x) * ratio}
-                                y={vertices.left.y + 20} textAnchor="middle" fontSize="12">
-                                {value}
-                            </text>
                         </g>
                     );
 
                     // Left side
                     const leftX = vertices.left.x + (vertices.top.x - vertices.left.x) * ratio;
                     const leftY = vertices.left.y - (vertices.left.y - vertices.top.y) * ratio;
+                    const leftTickX = leftX - 5;
+                    const leftTickY = leftY;
                     elements.push(
                         <g key={`left-tick-${i}`}>
                             <line
                                 x1={leftX}
                                 y1={leftY}
-                                x2={leftX - 5 * Math.cos(Math.PI / 3)}
-                                y2={leftY + 5 * Math.sin(Math.PI / 3)}
+                                x2={leftTickX}
+                                y2={leftTickY}
                                 stroke="black"
                                 strokeWidth="1"
                             />
-                            <text x={leftX - 15} y={leftY + 5} textAnchor="end"
-                                transform={`rotate(-60 ${leftX} ${leftY})`} fontSize="12">
-                                {value}
-                            </text>
                         </g>
                     );
 
                     // Right side
                     const rightX = vertices.right.x - (vertices.right.x - vertices.top.x) * ratio;
                     const rightY = vertices.left.y - (vertices.left.y - vertices.top.y) * ratio;
+                    const rightTickX = rightX + 5;
+                    const rightTickY = rightY;
                     elements.push(
                         <g key={`right-tick-${i}`}>
                             <line
                                 x1={rightX}
                                 y1={rightY}
-                                x2={rightX + 5 * Math.cos(Math.PI / 3)}
-                                y2={rightY + 5 * Math.sin(Math.PI / 3)}
+                                x2={rightTickX}
+                                y2={rightTickY}
                                 stroke="black"
                                 strokeWidth="1"
                             />
-                            <text x={rightX + 15} y={rightY + 5} textAnchor="start"
-                                transform={`rotate(60 ${rightX} ${rightY})`} fontSize="12">
-                                {value}
-                            </text>
                         </g>
                     );
                 }
