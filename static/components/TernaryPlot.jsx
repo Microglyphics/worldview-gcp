@@ -1,12 +1,10 @@
 // static/components/TernaryPlot.jsx
 
 import React, { useState, useEffect } from 'react';
-import CoordinateDebugger, { labelConfig } from './CoordinateDebugger'; // Debugging tool for ternary coordinates
 
 // TernaryPlot Component
 const TernaryPlot = ({ analysisData, onPlotCalculated }) => {
     const [layers, setLayers] = useState({
-        // baseline: true,  # Hide baseline by default
         gridLines: true,
         categoryBoundaries: true,
         shading: true
@@ -47,46 +45,21 @@ const TernaryPlot = ({ analysisData, onPlotCalculated }) => {
     const plotPoint = ternaryToCartesian(...analysisData.scores);
     
     useEffect(() => {
-        if (analysisData?.scores) {
+        if (analysisData?.scores && onPlotCalculated) {
             const plotPoint = ternaryToCartesian(...analysisData.scores);
-            console.log("📍 Calculated plot coordinates in TernaryPlot:", plotPoint);
-            
-            if (onPlotCalculated) {
-                console.log("📤 Sending plot coordinates to parent:", plotPoint);
-                onPlotCalculated(plotPoint);
-            } else {
-                console.warn("⚠️ WARNING: `onPlotCalculated` is missing in TernaryPlot!");
-            }
-        } else {
-            console.warn("⚠️ WARNING: `analysisData.scores` is undefined in TernaryPlot.");
+            onPlotCalculated(plotPoint);
         }
     }, [analysisData]);
  
     return (
         <div className="relative">
-            <DebugControls position={debugPosition} onAdjust={adjustPosition} />
             <LayerControls layers={layers} setLayers={setLayers} />
             <svg width={width} height={height} className="bg-white mx-auto" viewBox={`0 0 ${width} ${height}`}>
-                <text 
-                    key="postmodern-label"
-                    x={margin.left + labelConfig.postmodern.x} 
-                    y={height - margin.bottom + labelConfig.postmodern.y}
-                    textAnchor="end"
-                    transform={labelConfig.postmodern.r ? 
-                        `rotate(${labelConfig.postmodern.r} ${margin.left + labelConfig.postmodern.x} ${height - margin.bottom + labelConfig.postmodern.y})` : 
-                        null}
-                >
-                    Postmodern
-                </text>
-
-                {/* Debug overlay */}
-                {process.env.NODE_ENV === 'development' && (
-                    <CoordinateDebugger 
-                        width={width} 
-                        height={height} 
-                        margin={margin}
-                    />
-                )}
+                {layers.shading && generateShading()}
+                {layers.gridLines && generateGridAndTicks()}
+                {generateBaselineWithScales()}
+                {layers.categoryBoundaries && generateMixTriangle()}
+                <circle cx={plotPoint.x} cy={plotPoint.y} r="6" fill="red" stroke="white" strokeWidth="2"/>
             </svg>
         </div>
     );

@@ -45,52 +45,6 @@
             );
         };
 
-        // Postmodern Debug Controls Component
-        const DebugControls = ({ position, onAdjust }) => (
-            <div className="fixed bottom-4 left-4 bg-white p-4 rounded shadow-lg z-10">
-                <div className="font-bold mb-2">Label Position Debug</div>
-                <div className="space-y-2">
-                    <div className="space-x-2 mb-2">
-                        <button onClick={() => onAdjust('x', -5)} className="px-2 py-1 bg-blue-500 text-white rounded">X-5</button>
-                        <button onClick={() => onAdjust('x', 5)} className="px-2 py-1 bg-blue-500 text-white rounded">X+5</button>
-                        <button onClick={() => onAdjust('y', -5)} className="px-2 py-1 bg-blue-500 text-white rounded">Y-5</button>
-                        <button onClick={() => onAdjust('y', 5)} className="px-2 py-1 bg-blue-500 text-white rounded">Y+5</button>
-                    </div>
-                    <div className="space-x-2">
-                        <button onClick={() => onAdjust('r', -30)} className="px-2 py-1 bg-green-500 text-white rounded">R-30°</button>
-                        <button onClick={() => onAdjust('r', 30)} className="px-2 py-1 bg-green-500 text-white rounded">R+30°</button>
-                    </div>
-                </div>
-                <div className="text-sm font-mono mt-2">
-                    Position: ({position.x}, {position.y})<br/>
-                    Rotation: {position.r}°
-                </div>
-            </div>
-        );
-
-        // Modern Debug Controls Component
-        const DebugControls2 = ({ position, onAdjust }) => (
-            <div className="fixed bottom-4 right-4 bg-white p-4 rounded shadow-lg z-10">
-                <div className="font-bold mb-2">Modern Label Debug</div>
-                <div className="space-y-2">
-                    <div className="space-x-2 mb-2">
-                        <button onClick={() => onAdjust('x', -5)} className="px-2 py-1 bg-blue-500 text-white rounded">X-5</button>
-                        <button onClick={() => onAdjust('x', 5)} className="px-2 py-1 bg-blue-500 text-white rounded">X+5</button>
-                        <button onClick={() => onAdjust('y', -5)} className="px-2 py-1 bg-blue-500 text-white rounded">Y-5</button>
-                        <button onClick={() => onAdjust('y', 5)} className="px-2 py-1 bg-blue-500 text-white rounded">Y+5</button>
-                    </div>
-                    <div className="space-x-2">
-                        <button onClick={() => onAdjust('r', -30)} className="px-2 py-1 bg-green-500 text-white rounded">R-30°</button>
-                        <button onClick={() => onAdjust('r', 30)} className="px-2 py-1 bg-green-500 text-white rounded">R+30°</button>
-                    </div>
-                </div>
-                <div className="text-sm font-mono mt-2">
-                    Position: ({position.x}, {position.y})<br/>
-                    Rotation: {position.r}°
-                </div>
-            </div>
-        );
-
         // Ternary Plot Component
         const TernaryPlot = ({ analysisData }) => {
             const [layers, setLayers] = useState({
@@ -163,7 +117,7 @@
                     </text>
                 );
 
-                // Then add the Modern label with debug controls:
+                // Add the Modern label (right side)
                 elements.push(
                     <text 
                         key="modern-label"
@@ -632,7 +586,7 @@ const SurveyForm = () => {
                     }
 
                     // Log computed scores
-                    console.log("✅ Normalized scores:", { pre, mod, post });
+                    // console.log("✅ Normalized scores:", { pre, mod, post });
 
 
                     total = pre + mod + post;
@@ -659,11 +613,8 @@ const SurveyForm = () => {
                         source: getSource()
                     };
 
-                    // Log computed coordinates for debugging
-                    console.log("✅ Computed plot coordinates:", { plot_x, plot_y });
-
                     // Log final submission payload
-                    console.log("Final submission payload:", submissionData);
+                    // console.log("Final submission payload:", submissionData);
 
                     const submitResponse = await fetch('/api/submit', {
                         method: 'POST',

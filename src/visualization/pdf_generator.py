@@ -81,7 +81,7 @@ class ModernityPDFReport:
         """Add the category analysis on a new page"""
         self.pdf.add_page()
         self.pdf.set_font("Arial", style="B", size=18)
-        self.pdf.cell(0, 12, txt="Worldview Category Analysis", ln=True)
+        self.pdf.cell(0, 12, txt="Modernity Worldview Analysis", ln=True)
         self.pdf.ln(5)
 
         for category, response in category_responses.items():
